@@ -1,5 +1,6 @@
 const express = require('express');
 const users = require('./userDb');
+const posts = require('../posts/postDb');
 const router = express.Router();
 
 router.post('/', validateUser(), (req, res) => {
@@ -16,8 +17,8 @@ router.post('/', validateUser(), (req, res) => {
 
 router.post('/:id/posts', validatePost(), validateUserId(), (req, res) => {
   // do your magic!
-  users
-    .insertPost(req.body)
+  posts
+    .insert({ user_id: req.params.id, text: req.body.text })
     .then((post) => {
       res.status(201).json(post);
     })
@@ -56,9 +57,9 @@ router.get('/:id', validateUserId(), (req, res) => {
 router.get('/:id/posts', validateUserId(), (req, res) => {
   // do your magic!
   users
-    .getUserPosts(req.user)
+    .getUserPosts(req.params.id)
     .then((user) => {
-      res.status(201).json(req.user.posts);
+      res.status(201).json(user);
     })
     .catch((error) => {
       next(error);
@@ -85,20 +86,20 @@ router.delete('/:id', validateUserId(), (req, res) => {
     });
 });
 
-router.put('/:id', validateUser(), validateUserId(), (req, res) => {
-  // do your magic!
+router.put('/:id', validateUserId(), (req, res) => {
   users
-    .update(req.user, req.body)
+    .update(req.params.id, req.body)
     .then((user) => {
       if (user) {
         res.status(200).json(user);
-      } else {
-        res.status(404).json({
-          message: 'The user could not be found',
-        });
       }
     })
-    .catch(next);
+    .catch((error) => {
+      console.log(error);
+      res.status(500).json({
+        message: 'Could not update user',
+      });
+    });
 });
 
 //custom middleware
